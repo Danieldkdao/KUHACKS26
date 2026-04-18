@@ -253,7 +253,7 @@ export async function POST(req: Request) {
   const systemPrompt = await db.query.SystemPromptTable.findFirst({
     where: eq(SystemPromptTable.userId, session.user.id),
   });
-  const systemToUse = systemPrompt ?? "You are a helpful assistant.";
+  const systemToUse = systemPrompt ?? "No knowledge base.";
 
   const stream = createUIMessageStream({
     execute: async ({ writer }) => {
@@ -268,9 +268,8 @@ export async function POST(req: Request) {
         system: `
         ${DEFAULT_SYSTEM_PROMPT}
         -----------------------
-        OTHER SPECIFICATIONS:
         USER ID: ${session.user.id}
-        ${systemToUse}
+        KNOWLEDGE BASE: ${systemToUse}
         `,
         tools: {
           flightSearch: flightSearchTool,

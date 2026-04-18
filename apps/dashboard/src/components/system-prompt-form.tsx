@@ -11,7 +11,7 @@ import {
 import { Field, FieldDescription, FieldLabel } from "@/components/ui/field";
 import { LoadingSwap } from "@/components/ui/loading-swap";
 import { Textarea } from "@/components/ui/textarea";
-import { createUpdateSystemPrompt } from "@/lib/actions";
+import { upsertSystemPrompt } from "@/lib/actions";
 import { useState } from "react";
 import { toast } from "sonner";
 
@@ -31,7 +31,7 @@ export const SystemPromptForm = ({
     try {
       setLoading(true);
 
-      const response = await createUpdateSystemPrompt(systemPrompt);
+      const response = await upsertSystemPrompt(systemPrompt);
       if (response.error) {
         toast.error(response.message);
       } else {
@@ -47,13 +47,13 @@ export const SystemPromptForm = ({
       <CardHeader>
         <CardTitle>Assistant Knowledge Base</CardTitle>
         <CardDescription>
-          Update the system prompt the widget uses when answering new messages.
+          Update the knowledge base the widget uses when answering new messages.
         </CardDescription>
       </CardHeader>
       <CardContent>
         <form className="space-y-4">
           <Field>
-            <FieldLabel>System Prompt</FieldLabel>
+            <FieldLabel>Knowledge Base</FieldLabel>
             <Textarea
               className="min-h-40 resize-y"
               placeholder="Enter knowledge base instructions..."
@@ -71,7 +71,7 @@ export const SystemPromptForm = ({
             onClick={handleSaveSystemPrompt}
             disabled={loading}
           >
-            <LoadingSwap isLoading={loading}>Save System Prompt</LoadingSwap>
+            <LoadingSwap isLoading={loading}>Save Knowledge Base</LoadingSwap>
           </Button>
         </form>
       </CardContent>
