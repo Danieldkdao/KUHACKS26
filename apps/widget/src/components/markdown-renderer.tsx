@@ -13,13 +13,14 @@ export const MarkdownRenderer = ({
   return (
     <div
       className={cn(
-        "max-w-none text-base leading-7 text-foreground",
+        "min-w-0 max-w-full text-base leading-7 text-foreground",
         "[&_p]:my-3 [&_p:first-child]:mt-0 [&_p:last-child]:mb-0",
         "[&_ul]:my-3 [&_ul]:list-disc [&_ul]:pl-6",
         "[&_ol]:my-3 [&_ol]:list-decimal [&_ol]:pl-6",
         "[&_li]:my-1 [&_li]:pl-1",
         "[&_strong]:font-semibold [&_strong]:text-foreground",
         "[&_em]:italic",
+        "[&_pre]:max-w-full",
         className,
       )}
     >

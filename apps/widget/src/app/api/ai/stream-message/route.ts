@@ -8,6 +8,7 @@ import {
 import { db } from "@repo/db";
 import { ChatTable, MessageTable } from "@repo/db/schema";
 import { google } from "@repo/ai/models";
+import { NextResponse } from "next/server";
 
 export async function POST(req: Request) {
   const { messages, chatId }: { messages: UIMessage[]; chatId: string | null } =
@@ -34,6 +35,13 @@ export async function POST(req: Request) {
     role: "user",
   });
 
+  const systemPrompt = await db.query.SystemPromptTable.findFirst({});
+  if (!systemPrompt)
+    return NextResponse.json(
+      { error: "No system prompt defined." },
+      { status: 400 },
+    );
+
   const stream = createUIMessageStream({
     execute: async ({ writer }) => {
       writer.write({
@@ -44,7 +52,7 @@ export async function POST(req: Request) {
       const result = streamText({
         model: google("gemini-2.5-flash-lite"),
         messages: await convertToModelMessages(messages),
-        system: "You are a helpful assistant.",
+        system: systemPrompt.systemPrompt,
         onFinish: async (data) => {
           const latestAIMessage = data.text;
           if (!latestAIMessage.trim()) return;
