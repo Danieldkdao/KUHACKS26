@@ -11,7 +11,10 @@
     "db:auth": "pnpm dlx @better-auth/cli generate --output ../db/src/schemas/new-user.ts --config ./src/auth.ts"
   },
   "dependencies": {
-    "better-auth": "^1.6.5",
-    "@repo/db": "workspace:*"
+    "@repo/db": "workspace:*",
+    "better-auth": "^1.6.5"
+  },
+  "devDependencies": {
+    "@types/node": "^25.6.0"
   }
 }
