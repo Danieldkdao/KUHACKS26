@@ -46,8 +46,8 @@ export async function GET() {
   const panel = document.createElement("div");
   panel.style.position = "fixed";
   panel.style.zIndex = "999998";
-  panel.style.width = "380px";
-  panel.style.height = "640px";
+  panel.style.width = "440px";
+  panel.style.height = "800px";
   panel.style.maxWidth = "calc(100vw - 24px)";
   panel.style.maxHeight = "calc(100vh - 88px)";
   panel.style.borderRadius = "18px";
@@ -114,7 +114,8 @@ export async function GET() {
   return new NextResponse(script, {
     headers: {
       "Content-Type": "application/javascript; charset=utf-8",
-      "Cache-Control": "public, max-age=300",
+      "Cache-Control": "no-store, no-cache, must-revalidate, max-age=0",
+      // "Cache-Control": "public, max-age=300",
     },
   });
 }

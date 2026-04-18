@@ -7,6 +7,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { getChatById } from "@/lib/chat-data";
+import { MarkdownRenderer } from "@/components/markdown-renderer";
 
 type ChatPageProps = {
   params: Promise<{
@@ -69,9 +70,13 @@ export default async function ChatPage({ params }: ChatPageProps) {
                         {formatDateTime(message.createdAt)}
                       </span>
                     </div>
-                    <p className="whitespace-pre-wrap break-words text-sm leading-7">
-                      {message.message}
-                    </p>
+                    {message.role === "user" ? (
+                      <p className="whitespace-pre-wrap wrap-break-word text-base leading-7">
+                        {message.message}
+                      </p>
+                    ) : (
+                      <MarkdownRenderer>{message.message}</MarkdownRenderer>
+                    )}
                   </div>
                 </div>
               ))

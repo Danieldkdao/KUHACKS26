@@ -2,13 +2,19 @@
   "name": "@repo/ai",
   "version": "0.0.0",
   "private": true,
+  "type": "module",
   "exports": {
     ".": "./src/index.ts",
-    "./models": "./src/models.ts"
+    "./models": "./src/models.ts",
+    "./tools": "./src/tools.ts"
+  },
+  "scripts": {
+    "debug:tools": "node --env-file-if-exists=.env --experimental-strip-types ./src/run-all-tools.ts"
   },
   "dependencies": {
     "@ai-sdk/google": "^3.0.64",
-    "ai": "^6.0.168"
+    "ai": "^6.0.168",
+    "zod": "^4.3.6"
   },
   "devDependencies": {
     "@types/node": "25.6.0",
