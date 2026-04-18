@@ -1,5 +1,7 @@
-import { inspect } from "node:util";
+import { db } from "@repo/db";
+import { ApprovalRequestTable } from "@repo/db/schema";
 import { tool } from "ai";
+import { and, eq, gte, ilike, lte } from "drizzle-orm";
 import z from "zod";
 
 const FlightStatus = z.enum([
@@ -15,104 +17,27 @@ const DateString = z
   .string()
   .regex(/^\d{4}-\d{2}-\d{2}$/, "Must be in YYYY-MM-DD format");
 
-const SECRET_QUERY_KEYS = new Set(["access_key", "apikey"]);
-
-function logToolEvent(toolName: string, message: string, details?: unknown) {
-  const prefix = `[tools:${toolName}]`;
-
-  if (details === undefined) {
-    console.log(`${prefix} ${message}`);
-    return;
-  }
-
-  console.log(
-    `${prefix} ${message} ${inspect(details, {
-      depth: 5,
-      colors: false,
-      breakLength: 100,
-      compact: false,
-    })}`,
-  );
-}
-
-function getRequiredEnvVar(name: string, toolName: string) {
+const getRequiredEnvVar = (name: string) => {
   const value = process.env[name];
 
   if (!value) {
-    const message = `Missing required environment variable: ${name}`;
-    logToolEvent(toolName, message);
-    throw new Error(message);
+    throw new Error(`Missing required environment variable: ${name}`);
   }
 
-  logToolEvent(toolName, `Resolved environment variable ${name}`);
   return value;
-}
+};
 
-function toSearchParams(
+const toSearchParams = (
   params: Record<string, string | number | undefined | null>,
-) {
+) => {
   return new URLSearchParams(
     Object.entries(params)
       .filter(([, value]) => value !== undefined && value !== null)
       .map(([key, value]) => [key, String(value)]),
   );
-}
+};
 
-function redactUrl(url: string) {
-  const parsed = new URL(url);
-
-  for (const key of SECRET_QUERY_KEYS) {
-    if (parsed.searchParams.has(key)) {
-      parsed.searchParams.set(key, "***");
-    }
-  }
-
-  return parsed.toString();
-}
-
-function summarizeJsonPayload(payload: unknown): unknown {
-  if (Array.isArray(payload)) {
-    return {
-      type: "array",
-      length: payload.length,
-      preview: payload.slice(0, 2),
-    };
-  }
-
-  if (payload && typeof payload === "object") {
-    const record = payload as Record<string, unknown>;
-    const summary: Record<string, unknown> = {
-      type: "object",
-      keys: Object.keys(record),
-    };
-
-    if (Array.isArray(record.data)) {
-      summary.dataCount = record.data.length;
-    }
-
-    if (record.result && typeof record.result === "object") {
-      const result = record.result as Record<string, unknown>;
-
-      if (Array.isArray(result.list)) {
-        summary.resultListCount = result.list.length;
-      }
-
-      if (Array.isArray(result.rates)) {
-        summary.resultRateCount = result.rates.length;
-      }
-
-      if (typeof result.total_count === "number") {
-        summary.resultTotalCount = result.total_count;
-      }
-    }
-
-    return summary;
-  }
-
-  return payload;
-}
-
-function normalizeHotelApiError(error: unknown) {
+const normalizeHotelApiError = (error: unknown) => {
   if (!error || typeof error !== "object") {
     return error;
   }
@@ -135,9 +60,9 @@ function normalizeHotelApiError(error: unknown) {
   }
 
   return error;
-}
+};
 
-function extractApiErrorDetails(payload: unknown) {
+const extractApiErrorDetails = (payload: unknown) => {
   if (!payload || typeof payload !== "object") {
     return null;
   }
@@ -177,32 +102,15 @@ function extractApiErrorDetails(payload: unknown) {
   }
 
   return null;
-}
+};
 
-function sleep(ms: number) {
+const sleep = (ms: number) => {
   return new Promise((resolve) => setTimeout(resolve, ms));
-}
+};
 
-async function fetchJsonWithLogging<T>(
-  toolName: string,
-  label: string,
-  url: string,
-): Promise<T> {
-  logToolEvent(toolName, `${label}: sending request`, {
-    url: redactUrl(url),
-  });
-
+const fetchJson = async <T>(label: string, url: string): Promise<T> => {
   const res = await fetch(url);
-
-  logToolEvent(toolName, `${label}: received response`, {
-    status: res.status,
-    ok: res.ok,
-    statusText: res.statusText,
-  });
-
   const json = (await res.json()) as T;
-
-  logToolEvent(toolName, `${label}: parsed JSON`, summarizeJsonPayload(json));
 
   if (!res.ok) {
     const apiError = extractApiErrorDetails(json);
@@ -218,7 +126,7 @@ async function fetchJsonWithLogging<T>(
   }
 
   return json;
-}
+};
 
 export const flightSearchTool = tool({
   description: "Gets relevant flights based on the given parameters/filters.",
@@ -305,25 +213,11 @@ export const flightSearchTool = tool({
       ),
   }),
   execute: async (params) => {
-    const toolName = "flightSearch";
-    logToolEvent(toolName, "Starting execution", params);
-
-    const accessKey = getRequiredEnvVar("AVIATION_STACK_API_KEY", toolName);
+    const accessKey = getRequiredEnvVar("AVIATION_STACK_API_KEY");
     const query = toSearchParams(params as Record<string, string | number>);
     const url = `https://api.aviationstack.com/v1/flights?access_key=${accessKey}&limit=10&${query.toString()}`;
 
-    const json = await fetchJsonWithLogging<any>(
-      toolName,
-      "flight lookup",
-      url,
-    );
-
-    logToolEvent(toolName, "Finished execution", {
-      dataCount: Array.isArray(json?.data) ? json.data.length : 0,
-      pagination: json?.pagination ?? null,
-      error: json?.error ?? null,
-    });
-    return json;
+    return fetchJson<any>("flight lookup", url);
   },
 });
 
@@ -402,36 +296,18 @@ export const hotelSearchTool = tool({
     limit,
     sort,
   }) => {
-    const toolName = "hotelSearchTool";
-    logToolEvent(toolName, "Starting execution", {
-      query,
-      chk_in,
-      chk_out,
-      currency,
-      rooms,
-      adults,
-      age_of_children: age_of_children ?? null,
-      limit,
-      sort,
-    });
-
     const searchParams = toSearchParams({ query });
-    const searchData = await fetchJsonWithLogging<any>(
-      toolName,
+    const searchData = await fetchJson<any>(
       "hotel search",
       `https://data.xotelo.com/api/search?${searchParams.toString()}`,
     );
 
     if (searchData.error || !searchData.result?.list?.length) {
       const error = normalizeHotelApiError(searchData.error);
-      logToolEvent(toolName, "Hotel search returned no matches", {
-        error: error ?? null,
-      });
       return { error: error ?? "No hotels found for that query." };
     }
 
     const location_key = searchData.result.list[0].location_key;
-    logToolEvent(toolName, "Resolved location key", { location_key });
 
     const listParams = toSearchParams({
       location_key,
@@ -439,31 +315,18 @@ export const hotelSearchTool = tool({
       offset: "0",
       sort,
     });
-    const listData = await fetchJsonWithLogging<any>(
-      toolName,
+    const listData = await fetchJson<any>(
       "hotel list",
       `https://data.xotelo.com/api/list?${listParams.toString()}`,
     );
 
     if (listData.error || !listData.result?.list?.length) {
       const error = normalizeHotelApiError(listData.error);
-      logToolEvent(toolName, "Hotel list request returned no hotels", {
-        error: error ?? null,
-      });
       return { error: error ?? "Could not retrieve hotel list." };
     }
 
-    logToolEvent(toolName, "Preparing rate lookups", {
-      hotelCount: listData.result.list.length,
-    });
-
     const hotelsWithRates = await Promise.all(
       listData.result.list.map(async (hotel: any) => {
-        logToolEvent(toolName, "Fetching rates for hotel", {
-          hotelName: hotel.name,
-          hotelKey: hotel.key,
-        });
-
         const ratesParams = toSearchParams({
           hotel_key: hotel.key,
           chk_in,
@@ -473,20 +336,10 @@ export const hotelSearchTool = tool({
           adults: String(adults),
           ...(age_of_children ? { age_of_children } : {}),
         });
-        const ratesData = await fetchJsonWithLogging<any>(
-          toolName,
+        const ratesData = await fetchJson<any>(
           `hotel rates (${hotel.key})`,
           `https://data.xotelo.com/api/rates?${ratesParams.toString()}`,
         );
-
-        logToolEvent(toolName, "Completed rate lookup for hotel", {
-          hotelName: hotel.name,
-          hotelKey: hotel.key,
-          rateCount: Array.isArray(ratesData.result?.rates)
-            ? ratesData.result.rates.length
-            : 0,
-          error: normalizeHotelApiError(ratesData.error) ?? null,
-        });
 
         return {
           name: hotel.name,
@@ -509,12 +362,6 @@ export const hotelSearchTool = tool({
       }),
     );
 
-    logToolEvent(toolName, "Finished execution", {
-      location_key,
-      total_count: listData.result.total_count,
-      returnedHotels: hotelsWithRates.length,
-    });
-
     return {
       location_key,
       total_count: listData.result.total_count,
@@ -526,20 +373,18 @@ export const hotelSearchTool = tool({
 });
 
 async function otmGet<T>(
-  toolName: string,
   label: string,
   endpoint: string,
   params: Record<string, string | number>,
 ): Promise<T> {
   const query = toSearchParams({
-    apikey: getRequiredEnvVar("OPEN_TRIP_MAP_API_KEY", toolName),
+    apikey: getRequiredEnvVar("OPEN_TRIP_MAP_API_KEY"),
     ...Object.fromEntries(
       Object.entries(params).map(([k, v]) => [k, String(v)]),
     ),
   });
 
-  return fetchJsonWithLogging<T>(
-    toolName,
+  return fetchJson<T>(
     label,
     `https://api.opentripmap.com/0.1/en/places/${endpoint}?${query.toString()}`,
   );
@@ -560,40 +405,18 @@ export const experienceSearchTool = tool({
       .describe("Search radius in kilometers"),
   }),
   execute: async ({ location, radius_km }) => {
-    const toolName = "experienceSearch";
-    logToolEvent(toolName, "Starting execution", { location, radius_km });
-
-    const geo = await otmGet<any>(
-      toolName,
-      "geoname lookup",
-      "geoname",
-      { name: location },
-    );
+    const geo = await otmGet<any>("geoname lookup", "geoname", {
+      name: location,
+    });
     if (geo.status !== "OK") return { error: `Could not find "${location}"` };
 
-    logToolEvent(toolName, "Resolved location", {
-      name: geo.name,
-      country: geo.country,
+    const pois = await otmGet<any[]>("radius lookup", "radius", {
       lat: geo.lat,
       lon: geo.lon,
-    });
-
-    const pois = await otmGet<any[]>(
-      toolName,
-      "radius lookup",
-      "radius",
-      {
-        lat: geo.lat,
-        lon: geo.lon,
-        radius: radius_km * 1000,
-        limit: 6,
-        rate: 2,
-        format: "json",
-      },
-    );
-
-    logToolEvent(toolName, "Fetched nearby points of interest", {
-      count: Array.isArray(pois) ? pois.length : 0,
+      radius: radius_km * 1000,
+      limit: 6,
+      rate: 2,
+      format: "json",
     });
 
     const results: Array<{
@@ -607,29 +430,16 @@ export const experienceSearchTool = tool({
     const skippedPois: Array<{ xid: string; reason: string }> = [];
 
     for (const [index, poi] of (pois ?? []).entries()) {
-      logToolEvent(toolName, "Fetching POI details", {
-        xid: poi.xid,
-        name: poi.name,
-        position: index + 1,
-      });
-
       try {
         const details = await otmGet<any>(
-          toolName,
           `poi details (${poi.xid})`,
           `xid/${poi.xid}`,
           {},
         );
 
-        logToolEvent(toolName, "Fetched POI details", {
-          xid: poi.xid,
-          resolvedName: details.name || poi.name || null,
-        });
-
         results.push({
           name: details.name || poi.name,
-          categories:
-            poi.kinds?.split(",").map((k: string) => k.trim()) ?? [],
+          categories: poi.kinds?.split(",").map((k: string) => k.trim()) ?? [],
           description:
             details.wikipedia_extracts?.text?.slice(0, 300) ??
             details.info?.descr ??
@@ -641,10 +451,6 @@ export const experienceSearchTool = tool({
       } catch (error) {
         const reason = error instanceof Error ? error.message : String(error);
         skippedPois.push({ xid: poi.xid, reason });
-        logToolEvent(toolName, "Skipping POI after detail lookup failure", {
-          xid: poi.xid,
-          reason,
-        });
       }
 
       if (index < (pois ?? []).length - 1) {
@@ -652,16 +458,102 @@ export const experienceSearchTool = tool({
       }
     }
 
-    logToolEvent(toolName, "Finished execution", {
-      location: `${geo.name}, ${geo.country}`,
-      resultCount: results.length,
-      skippedPoiCount: skippedPois.length,
-    });
-
     return {
       location: `${geo.name}, ${geo.country}`,
       results,
       skipped_pois: skippedPois,
     };
+  },
+});
+
+export const listApprovalRequestsTool = tool({
+  description: "Lists all the current user's approval requests.",
+  inputSchema: z.object({
+    userId: z.string().min(1).describe("The id of the current user."),
+  }),
+  execute: async ({ userId }) => {
+    return db.query.ApprovalRequestTable.findMany({
+      where: eq(ApprovalRequestTable.userId, userId),
+    });
+  },
+});
+
+export const getApprovalRequestTool = tool({
+  description:
+    "Get a user's approval request based on the id, destination, or price.",
+  inputSchema: z.object({
+    id: z
+      .uuid()
+      .optional()
+      .describe(
+        "The id of the approval request. You will only include this if you remember what the id of the approval request was. Otherwise rely on the destination or cost instead.",
+      ),
+    destination: z
+      .string()
+      .optional()
+      .describe(
+        "The destination of the approval request. Note that this will be used to search by ilike.",
+      ),
+    gteCost: z
+      .number()
+      .int()
+      .positive()
+      .optional()
+      .describe(
+        "The greater than cost boundary that you might want to set if the user gives you a cost it must be greater than or equal to.",
+      ),
+    lteCost: z
+      .number()
+      .int()
+      .positive()
+      .optional()
+      .describe(
+        "The less than cost boundary that you might want to set if the user gives you a cost it must be less than or equal to.",
+      ),
+  }),
+  execute: async (input) => {
+    const { id, destination, gteCost, lteCost } = input;
+
+    return db.query.ApprovalRequestTable.findFirst({
+      where: and(
+        id ? eq(ApprovalRequestTable.id, id) : undefined,
+        destination?.trim()
+          ? ilike(ApprovalRequestTable.destination, `%${destination}%`)
+          : undefined,
+        gteCost ? gte(ApprovalRequestTable.cost, gteCost) : undefined,
+        lteCost ? lte(ApprovalRequestTable.cost, lteCost) : undefined,
+      ),
+    });
+  },
+});
+
+export const createApprovalRequestTool = tool({
+  description: "Create an approval request for the current user.",
+  inputSchema: z.object({
+    userId: z.string().min(1).describe("The id of the current user."),
+    destination: z
+      .string()
+      .min(1)
+      .describe(
+        "The destination of the trip that will be associated with this approval request.",
+      ),
+    cost: z
+      .number()
+      .int()
+      .positive()
+      .min(1)
+      .describe(
+        "The cost of the trip that will be associated with this approval request.",
+      ),
+  }),
+  execute: async (input) => {
+    const [insertedApprovalRequest] = await db
+      .insert(ApprovalRequestTable)
+      .values(input)
+      .returning();
+
+    return (
+      insertedApprovalRequest || "ERROR: FAILED TO INSERT APPROVAL REQUEST"
+    );
   },
 });

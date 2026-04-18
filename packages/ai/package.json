@@ -8,12 +8,11 @@
     "./models": "./src/models.ts",
     "./tools": "./src/tools.ts"
   },
-  "scripts": {
-    "debug:tools": "node --env-file-if-exists=.env --experimental-strip-types ./src/run-all-tools.ts"
-  },
   "dependencies": {
     "@ai-sdk/google": "^3.0.64",
+    "@repo/db": "workspace:*",
     "ai": "^6.0.168",
+    "drizzle-orm": "^0.45.2",
     "zod": "^4.3.6"
   },
   "devDependencies": {

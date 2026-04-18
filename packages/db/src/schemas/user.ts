@@ -3,6 +3,7 @@ import { pgTable, text, timestamp, boolean, index } from "drizzle-orm/pg-core";
 import { ChatTable } from "./chat";
 import { MessageTable } from "./message";
 import { SystemPromptTable } from "./system-prompt";
+import { ApprovalRequestTable } from "./approval-request";
 
 export const user = pgTable("user", {
   id: text("id").primaryKey(),
@@ -82,6 +83,7 @@ export const userRelations = relations(user, ({ one, many }) => ({
   chats: many(ChatTable),
   messages: many(MessageTable),
   systemPrompt: one(SystemPromptTable),
+  approvalRequests: many(ApprovalRequestTable),
 }));
 
 export const sessionRelations = relations(session, ({ one }) => ({

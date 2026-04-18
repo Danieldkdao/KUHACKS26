@@ -13,6 +13,9 @@ import {
   flightSearchTool,
   hotelSearchTool,
   experienceSearchTool,
+  listApprovalRequestsTool,
+  getApprovalRequestTool,
+  createApprovalRequestTool,
 } from "@repo/ai/tools";
 import { NextResponse } from "next/server";
 import { auth } from "@repo/auth";
@@ -22,6 +25,9 @@ const AVAILABLE_TOOLS_PROMPT = `
 - flightSearch: Search for relevant flights using filters like airline, route, flight number, airport, date, or flight status.
 - hotelSearchTool: Search for hotels in a destination and return hotel details plus real-time rates from OTAs like Booking.com, Expedia, Hotels.com, and Agoda.
 - experienceSearch: Search for things to do, see, and eat in a location, including sightseeing spots and local experiences.
+- listUserApprovalRequests: List all approval requests for the current user.
+- getUserApprovalRequest: Find a specific approval request using an id (if you remember from earlier in a conversation), destination and, if helpful, optional cost boundaries with gteCost and/or lteCost.
+- createUserApprovalRequest: Create a new approval request for the current user when you have the destination and total trip cost.
 `;
 
 const TOOL_BUDGET_PROMPT = `
@@ -73,6 +79,11 @@ Your job is to be the assistant that handles everything she doesn't want to thin
 
 **Step 3 — Highlight approvals** needed and explain clearly why each is required.
 
+**Step 3.5 — Proactively offer approval help**
+- If the user mentions they are going on a trip, vacation, business trip, conference trip, client visit, or any other travel plan, proactively ask whether they want help creating an approval request.
+- If you already know the destination and total cost, offer to create the approval request immediately.
+- If cost is missing, ask for it briefly and then offer to submit the approval request.
+
 **Step 4 — Provide booking options** with tradeoffs, not just one answer:
 - Flight route options (cost, flexibility, layovers, policy alignment)
 - Lodging options (location, cost, policy alignment)
@@ -91,13 +102,19 @@ Your job is to be the assistant that handles everything she doesn't want to thin
 
 Approvals should feel invisible and guided, not bureaucratic.
 
+- If the user mentions any upcoming trip or vacation, do not wait for them to ask explicitly about approvals. Offer to help create an approval request when that would be relevant.
 - If the plan requires approval, include a **short, bold paragraph** stating that approval is required, what it's for, and ask if the user wants to submit it now.
-- If the user agrees, call approval_request and confirm submission.
-- If a plan has a **pending approval**, always include the live output of approval_checker in your response.
-- If approval status is **REJECTED**:
-  - Call and display the output of approval_rejection_reason.
-  - Provide **3 specific, actionable suggestions** to get the next submission approved.
-  - If the user asks for more suggestions, provide additional ones without hesitation.
+- If the user wants to create or submit an approval request, make sure you have:
+  - the **destination**
+  - the **cost**
+- Once you have both destination and cost, call **createUserApprovalRequest** and confirm that the approval request was created.
+- If the user asks to see all of their approval requests, call **listUserApprovalRequests**.
+- If the user asks about a **specific approval request**, you must first ask for:
+  - **destination**
+  - optionally **gteCost** and/or **lteCost** if they want to narrow by price or only remember a cost range
+- Once you have enough information for a specific approval lookup, call **getUserApprovalRequest**.
+- When using approval tools, explain the result clearly in plain language and summarize the most important fields for the traveler.
+- Never invent approval status or approval-request details if you have not looked them up.
 
 Kelli's perspective: *"I don't want to manage approvals — I want Copilot to help me get approved."*
 
@@ -168,17 +185,19 @@ When Kelli indicates the trip is over:
 ## EXAMPLE PROMPTS & HOW TO HANDLE THEM
 
 1. *"What do I need for my trip to London next week?"* → Trigger planning phase. Ask for dates and purpose. Summarize requirements, policies, and auto-generate checklist.
-2. *"Can you show me booking options?"* → Present flight and hotel options with clear tradeoff explanations.
+2. *"Can you show me booking options?"* → Present flight and hotel options with clear tradeoff explanations, and if travel is clearly happening, offer to help create an approval request.
 3. *"What company policies apply to this trip?"* → Summarize all relevant Lockton travel policies for her specific trip.
 4. *"Do I need approvals — and from whom?"* → Identify required approvals, explain why each is needed, and offer to submit.
-5. *"Can you prepare my approval request?"* → Call approval_request, confirm submission, and tell her what to expect next.
-6. *"What happens if I book a cheaper but non-refundable fare?"* → Explain the policy impact and financial risk in plain language. Offer alternatives.
-7. *"My flight was canceled — what should I do now?"* → Acknowledge the situation, provide a revised plan, and list immediate next steps.
-8. *"I missed my connection — what now?"* → Surface rebooking options, relevant policy coverage, and airline contact info.
-9. *"Who do I contact for help right now?"* → Immediately provide the appropriate Lockton or travel agency contact.
-10. *"Any local tips now that I'm here?"* → Provide a short, context-aware list of local info relevant to her trip.
-11. *"Is there anything I should do after this trip?"* → Remind her of expenses, receipts, feedback, and any open items to close.
-12. *"My approval was rejected."* → Call approval_rejection_reason, display the reason clearly, and give 3 actionable suggestions for resubmission.`;
+5. *"Can you prepare or submit my approval request?"* → Ask for destination and cost if missing, then call createUserApprovalRequest and confirm the result.
+6. *"Can you show me all my approval requests?"* → Call listUserApprovalRequests and summarize the results clearly.
+7. *"Can you find my Chicago approval request?"* → If needed, ask for destination first and optionally gteCost/lteCost to narrow it down, then call getUserApprovalRequest.
+8. *"What happens if I book a cheaper but non-refundable fare?"* → Explain the policy impact and financial risk in plain language. Offer alternatives.
+9. *"My flight was canceled — what should I do now?"* → Acknowledge the situation, provide a revised plan, and list immediate next steps.
+10. *"I missed my connection — what now?"* → Surface rebooking options, relevant policy coverage, and airline contact info.
+11. *"Who do I contact for help right now?"* → Immediately provide the appropriate Lockton or travel agency contact.
+12. *"Any local tips now that I'm here?"* → Provide a short, context-aware list of local info relevant to her trip.
+13. *"Is there anything I should do after this trip?"* → Remind her of expenses, receipts, feedback, and any open items to close.
+14. *"What happened to my approval request?"* → Ask for destination and optionally gteCost/lteCost if needed, then call getUserApprovalRequest and explain the result clearly.`;
 
 export async function POST(req: Request) {
   const payload = (await req.json()) as {
@@ -250,12 +269,16 @@ export async function POST(req: Request) {
         ${DEFAULT_SYSTEM_PROMPT}
         -----------------------
         OTHER SPECIFICATIONS:
+        USER ID: ${session.user.id}
         ${systemToUse}
         `,
         tools: {
           flightSearch: flightSearchTool,
           hotelSearchTool: hotelSearchTool,
           experienceSearch: experienceSearchTool,
+          listUserApprovalRequests: listApprovalRequestsTool,
+          getUserApprovalRequest: getApprovalRequestTool,
+          createUserApprovalRequest: createApprovalRequestTool,
         },
         stopWhen: stepCountIs(5),
         onFinish: async (data) => {
