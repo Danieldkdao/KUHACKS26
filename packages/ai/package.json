@@ -1,0 +1,17 @@
+{
+  "name": "@repo/ai",
+  "version": "0.0.0",
+  "private": true,
+  "exports": {
+    ".": "./src/index.ts",
+    "./models": "./src/models.ts"
+  },
+  "dependencies": {
+    "@ai-sdk/google": "^3.0.64",
+    "ai": "^6.0.168"
+  },
+  "devDependencies": {
+    "@types/node": "25.6.0",
+    "typescript": "^5"
+  }
+}
