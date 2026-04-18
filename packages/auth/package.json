@@ -1,0 +1,17 @@
+{
+  "name": "@repo/auth",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/auth.ts",
+    "./client": "./src/auth-client.ts"
+  },
+  "scripts": {
+    "db:auth": "pnpm dlx @better-auth/cli generate --output ../db/src/schemas/new-user.ts --config ./src/auth.ts"
+  },
+  "dependencies": {
+    "better-auth": "^1.6.5",
+    "@repo/db": "workspace:*"
+  }
+}

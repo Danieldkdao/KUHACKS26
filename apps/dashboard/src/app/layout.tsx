@@ -3,13 +3,6 @@ import { Outfit, Geist_Mono, Inter } from "next/font/google";
 import "./globals.css";
 import { cn } from "@/lib/utils";
 import { Toaster } from "@/components/ui/sonner";
-import { DashboardSidebar } from "@/components/dashboard-sidebar";
-import {
-  SidebarInset,
-  SidebarProvider,
-  SidebarTrigger,
-} from "@/components/ui/sidebar";
-import Script from "next/script";
 
 const inter = Inter({ subsets: ["latin"], variable: "--font-sans" });
 
@@ -45,29 +38,9 @@ export default function RootLayout({
         inter.variable,
       )}
     >
-      <body className="min-h-full flex flex-col">
-        <Script
-          src="http://localhost:3001/widget.js"
-          strategy="afterInteractive"
-          data-widget-id="local-dev"
-          data-position="bottom-right"
-          data-theme="light"
-        />
+      <body className="min-h-full bg-background text-foreground">
         <Toaster />
-        <SidebarProvider defaultOpen>
-          <DashboardSidebar />
-          <SidebarInset className="bg-muted/30">
-            <div className="sticky top-0 z-20 flex h-14 items-center gap-3 border-b border-border/70 bg-background/85 px-4 backdrop-blur md:hidden">
-              <SidebarTrigger />
-              <div>
-                <p className="text-sm font-medium text-foreground">
-                  Chat Dashboard
-                </p>
-              </div>
-            </div>
-            {children}
-          </SidebarInset>
-        </SidebarProvider>
+        {children}
       </body>
     </html>
   );

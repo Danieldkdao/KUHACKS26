@@ -1,13 +1,23 @@
 import { getDashboardStats } from "@/lib/chat-data";
 import { DashboardSidebarNav } from "@/components/dashboard-sidebar-nav";
 import { Bot, MessageSquare, Sparkles } from "lucide-react";
+import { DashboardSidebarUserButton } from "@/components/dashboard-sidebar-user-button";
 import {
   Sidebar,
   SidebarContent,
+  SidebarFooter,
   SidebarHeader,
 } from "@/components/ui/sidebar";
 
-export const DashboardSidebar = async () => {
+type DashboardSidebarProps = {
+  user: {
+    name: string;
+    email: string;
+    image?: string | null;
+  };
+};
+
+export const DashboardSidebar = async ({ user }: DashboardSidebarProps) => {
   const { chats, totalChats, totalMessages } = await getDashboardStats();
 
   return (
@@ -53,6 +63,9 @@ export const DashboardSidebar = async () => {
       <SidebarContent className="px-4 py-4">
         <DashboardSidebarNav chats={chats} />
       </SidebarContent>
+      <SidebarFooter className="border-t border-border/70 px-4 py-4">
+        <DashboardSidebarUserButton user={user} />
+      </SidebarFooter>
     </Sidebar>
   );
 };

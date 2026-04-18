@@ -2,6 +2,7 @@
   "name": "@repo/db",
   "version": "0.0.0",
   "private": true,
+  "type": "module",
   "exports": {
     ".": "./src/db.ts",
     "./schema": "./src/schema.ts"
