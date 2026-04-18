@@ -22,7 +22,7 @@ export default async function AppLayout({
   return (
     <>
       <Script
-        src="http://localhost:3001/widget.js"
+        src={`${process.env.SCRIPT_URL}/widget.js`}
         strategy="afterInteractive"
         data-widget-id="local-dev"
         data-position="bottom-right"

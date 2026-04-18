@@ -1,6 +1,6 @@
 {
   "$schema": "https://turbo.build/schema.json",
-  "globalEnv": ["DATABASE_URL", "GEMINI_API_KEY","BETTER_AUTH_SECRET", "BETTER_AUTH_URL", "AVIATION_STACK_API_KEY", "OPEN_TRIP_MAP_API_KEY"],
+  "globalEnv": ["DATABASE_URL", "SCRIPT_URL", "GEMINI_API_KEY","BETTER_AUTH_SECRET", "BETTER_AUTH_URL", "AVIATION_STACK_API_KEY", "OPEN_TRIP_MAP_API_KEY"],
   "tasks": {
     "build": {
       "dependsOn": ["^build"],
