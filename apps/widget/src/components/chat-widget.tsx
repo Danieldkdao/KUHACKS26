@@ -356,9 +356,9 @@ export const ChatWidget = ({ widgetId, theme }: ChatWidgetProps) => {
   return (
     <div className="rounded-xl border shadow-sm overflow-hidden h-full flex flex-col">
       <div className="w-full bg-primary p-5">
-        <h1 className="text-2xl font-bold text-white">Chatbot</h1>
+        <h1 className="text-2xl font-bold text-white">TravelBot</h1>
         <p className="text-base text-white">
-          This is a chatbot for this project.
+          TravelBot is here to help you with all your travel needs.
         </p>
       </div>
       <div className="p-2 md:p-5 bg-card flex-1 min-h-0 overflow-y-auto flex flex-col gap-4">
