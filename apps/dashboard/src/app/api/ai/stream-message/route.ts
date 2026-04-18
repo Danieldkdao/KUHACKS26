@@ -5,7 +5,7 @@ import {
   createUIMessageStreamResponse,
   stepCountIs,
   streamText,
-} from "ai";
+} from "@repo/ai";
 import { db } from "@repo/db";
 import { ChatTable, MessageTable, SystemPromptTable } from "@repo/db/schema";
 import { google } from "@repo/ai/models";
@@ -13,9 +13,9 @@ import {
   flightSearchTool,
   hotelSearchTool,
   experienceSearchTool,
-  listApprovalRequestsTool,
-  getApprovalRequestTool,
-  createApprovalRequestTool,
+  createListApprovalRequestsTool,
+  createGetApprovalRequestTool,
+  createCreateApprovalRequestTool,
 } from "@repo/ai/tools";
 import { NextResponse } from "next/server";
 import { auth } from "@repo/auth";
@@ -261,9 +261,9 @@ export async function POST(req: Request) {
           flightSearch: flightSearchTool,
           hotelSearchTool: hotelSearchTool,
           experienceSearch: experienceSearchTool,
-          listUserApprovalRequests: listApprovalRequestsTool,
-          getUserApprovalRequest: getApprovalRequestTool,
-          createUserApprovalRequest: createApprovalRequestTool,
+          listUserApprovalRequests: createListApprovalRequestsTool(session.user.id),
+          getUserApprovalRequest: createGetApprovalRequestTool(session.user.id),
+          createUserApprovalRequest: createCreateApprovalRequestTool(session.user.id),
         },
         stopWhen: stepCountIs(5),
         onFinish: async (data) => {

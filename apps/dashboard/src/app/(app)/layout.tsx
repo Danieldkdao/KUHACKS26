@@ -24,7 +24,7 @@ export default async function AppLayout({
       <Script
         src={`${process.env.SCRIPT_URL}/widget.js`}
         strategy="afterInteractive"
-        data-widget-id="local-dev"
+        data-user-id={session.user.id}
         data-position="bottom-right"
         data-theme="light"
       />

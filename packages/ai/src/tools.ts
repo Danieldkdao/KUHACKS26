@@ -108,6 +108,22 @@ const sleep = (ms: number) => {
   return new Promise((resolve) => setTimeout(resolve, ms));
 };
 
+const serializeApprovalRequest = (
+  approvalRequest: {
+    id: string;
+    userId: string;
+    destination: string;
+    cost: number;
+    status: "pending" | "approved" | "rejected";
+    createdAt: Date;
+  },
+) => {
+  return {
+    ...approvalRequest,
+    createdAt: approvalRequest.createdAt.toISOString(),
+  };
+};
+
 const fetchJson = async <T>(label: string, url: string): Promise<T> => {
   const res = await fetch(url);
   const json = (await res.json()) as T;
@@ -466,94 +482,102 @@ export const experienceSearchTool = tool({
   },
 });
 
-export const listApprovalRequestsTool = tool({
-  description: "Lists all the current user's approval requests.",
-  inputSchema: z.object({
-    userId: z.string().min(1).describe("The id of the current user."),
-  }),
-  execute: async ({ userId }) => {
-    return db.query.ApprovalRequestTable.findMany({
-      where: eq(ApprovalRequestTable.userId, userId),
-    });
-  },
-});
+export const createListApprovalRequestsTool = (userId: string) =>
+  tool({
+    description: "Lists all the current user's approval requests.",
+    inputSchema: z.object({}),
+    execute: async () => {
+      const rows = await db.query.ApprovalRequestTable.findMany({
+        where: eq(ApprovalRequestTable.userId, userId),
+      });
 
-export const getApprovalRequestTool = tool({
-  description:
-    "Get a user's approval request based on the id, destination, or price.",
-  inputSchema: z.object({
-    id: z
-      .uuid()
-      .optional()
-      .describe(
-        "The id of the approval request. You will only include this if you remember what the id of the approval request was. Otherwise rely on the destination or cost instead.",
-      ),
-    destination: z
-      .string()
-      .optional()
-      .describe(
-        "The destination of the approval request. Note that this will be used to search by ilike.",
-      ),
-    gteCost: z
-      .number()
-      .int()
-      .positive()
-      .optional()
-      .describe(
-        "The greater than cost boundary that you might want to set if the user gives you a cost it must be greater than or equal to.",
-      ),
-    lteCost: z
-      .number()
-      .int()
-      .positive()
-      .optional()
-      .describe(
-        "The less than cost boundary that you might want to set if the user gives you a cost it must be less than or equal to.",
-      ),
-  }),
-  execute: async (input) => {
-    const { id, destination, gteCost, lteCost } = input;
+      return rows.map(serializeApprovalRequest);
+    },
+  });
 
-    return db.query.ApprovalRequestTable.findFirst({
-      where: and(
-        id ? eq(ApprovalRequestTable.id, id) : undefined,
-        destination?.trim()
-          ? ilike(ApprovalRequestTable.destination, `%${destination}%`)
-          : undefined,
-        gteCost ? gte(ApprovalRequestTable.cost, gteCost) : undefined,
-        lteCost ? lte(ApprovalRequestTable.cost, lteCost) : undefined,
-      ),
-    });
-  },
-});
+export const createGetApprovalRequestTool = (userId: string) =>
+  tool({
+    description:
+      "Get a user's approval request based on the id, destination, or price.",
+    inputSchema: z.object({
+      id: z
+        .uuid()
+        .optional()
+        .describe(
+          "The id of the approval request. You will only include this if you remember what the id of the approval request was. Otherwise rely on the destination or cost instead.",
+        ),
+      destination: z
+        .string()
+        .optional()
+        .describe(
+          "The destination of the approval request. Note that this will be used to search by ilike.",
+        ),
+      gteCost: z
+        .number()
+        .int()
+        .positive()
+        .optional()
+        .describe(
+          "The greater than cost boundary that you might want to set if the user gives you a cost it must be greater than or equal to.",
+        ),
+      lteCost: z
+        .number()
+        .int()
+        .positive()
+        .optional()
+        .describe(
+          "The less than cost boundary that you might want to set if the user gives you a cost it must be less than or equal to.",
+        ),
+    }),
+    execute: async (input) => {
+      const { id, destination, gteCost, lteCost } = input;
 
-export const createApprovalRequestTool = tool({
-  description: "Create an approval request for the current user.",
-  inputSchema: z.object({
-    userId: z.string().min(1).describe("The id of the current user."),
-    destination: z
-      .string()
-      .min(1)
-      .describe(
-        "The destination of the trip that will be associated with this approval request.",
-      ),
-    cost: z
-      .number()
-      .int()
-      .positive()
-      .min(1)
-      .describe(
-        "The cost of the trip that will be associated with this approval request.",
-      ),
-  }),
-  execute: async (input) => {
-    const [insertedApprovalRequest] = await db
-      .insert(ApprovalRequestTable)
-      .values(input)
-      .returning();
+      const row = await db.query.ApprovalRequestTable.findFirst({
+        where: and(
+          eq(ApprovalRequestTable.userId, userId),
+          id ? eq(ApprovalRequestTable.id, id) : undefined,
+          destination?.trim()
+            ? ilike(ApprovalRequestTable.destination, `%${destination}%`)
+            : undefined,
+          gteCost ? gte(ApprovalRequestTable.cost, gteCost) : undefined,
+          lteCost ? lte(ApprovalRequestTable.cost, lteCost) : undefined,
+        ),
+      });
 
-    return (
-      insertedApprovalRequest || "ERROR: FAILED TO INSERT APPROVAL REQUEST"
-    );
-  },
-});
+      return row ? serializeApprovalRequest(row) : null;
+    },
+  });
+
+export const createCreateApprovalRequestTool = (userId: string) =>
+  tool({
+    description: "Create an approval request for the current user.",
+    inputSchema: z.object({
+      destination: z
+        .string()
+        .min(1)
+        .describe(
+          "The destination of the trip that will be associated with this approval request.",
+        ),
+      cost: z
+        .number()
+        .int()
+        .positive()
+        .min(1)
+        .describe(
+          "The cost of the trip that will be associated with this approval request.",
+        ),
+    }),
+    execute: async (input) => {
+      const [insertedApprovalRequest] = await db
+        .insert(ApprovalRequestTable)
+        .values({
+          userId,
+          ...input,
+        })
+        .returning();
+
+      return insertedApprovalRequest
+        ? serializeApprovalRequest(insertedApprovalRequest)
+        : { error: "FAILED TO INSERT APPROVAL REQUEST" };
+    },
+  });

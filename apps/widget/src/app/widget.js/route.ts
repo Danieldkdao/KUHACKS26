@@ -14,15 +14,15 @@ export async function GET() {
 
   if (!currentScript) return;
 
-  const widgetId = currentScript.getAttribute("data-widget-id") || "";
+  const userId = currentScript.getAttribute("data-user-id") || "";
   const position = currentScript.getAttribute("data-position") || "bottom-right";
   const theme = currentScript.getAttribute("data-theme") || "light";
   const baseUrl = new URL(currentScript.src).origin;
 
   const iframeUrl =
     baseUrl +
-    "/embed?widgetId=" +
-    encodeURIComponent(widgetId) +
+    "/embed?userId=" +
+    encodeURIComponent(userId) +
     "&theme=" +
     encodeURIComponent(theme);
 

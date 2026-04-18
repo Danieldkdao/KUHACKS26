@@ -5,20 +5,24 @@ import {
   createUIMessageStreamResponse,
   stepCountIs,
   streamText,
-} from "ai";
+} from "@repo/ai";
 import { db } from "@repo/db";
-import { ChatTable, MessageTable, SystemPromptTable } from "@repo/db/schema";
+import {
+  ChatTable,
+  MessageTable,
+  SystemPromptTable,
+  user,
+} from "@repo/db/schema";
 import { google } from "@repo/ai/models";
 import {
   flightSearchTool,
   hotelSearchTool,
   experienceSearchTool,
-  listApprovalRequestsTool,
-  getApprovalRequestTool,
-  createApprovalRequestTool,
+  createListApprovalRequestsTool,
+  createGetApprovalRequestTool,
+  createCreateApprovalRequestTool,
 } from "@repo/ai/tools";
 import { NextResponse } from "next/server";
-import { auth } from "@repo/auth";
 import { eq } from "drizzle-orm";
 
 const AVAILABLE_TOOLS_PROMPT = `
@@ -189,17 +193,25 @@ export async function POST(req: Request) {
   const payload = (await req.json()) as {
     messages?: UIMessage[];
     chatId?: string | null;
+    userId?: string | null;
   };
   const messages = payload.messages;
   const chatId = payload.chatId ?? null;
+  const uncheckedUserId = payload.userId ?? "anonymous";
 
-  const session = await auth.api.getSession({ headers: req.headers });
-  if (!session) {
+  const existingUser = await db.query.user.findFirst({
+    where: eq(user.id, uncheckedUserId),
+  });
+
+  if (!existingUser) {
     return NextResponse.json(
-      { error: "You are not authenticated." },
+      {
+        error: "You are unauthenticated.",
+      },
       { status: 400 },
     );
   }
+  const userId = existingUser.id;
 
   if (!Array.isArray(messages)) {
     return NextResponse.json(
@@ -224,20 +236,20 @@ export async function POST(req: Request) {
     const [insertedChat] = await db
       .insert(ChatTable)
       .values({
-        userId: session.user.id,
+        userId: userId,
       })
       .returning();
     chatIdToUse = insertedChat.id;
   }
   await db.insert(MessageTable).values({
-    userId: session.user.id,
+    userId,
     chatId: chatIdToUse,
     message: latestUserMessage,
     role: "user",
   });
 
   const systemPrompt = await db.query.SystemPromptTable.findFirst({
-    where: eq(SystemPromptTable.userId, session.user.id),
+    where: eq(SystemPromptTable.userId, userId),
   });
   const systemToUse = systemPrompt ?? "No knowledge base.";
 
@@ -254,16 +266,16 @@ export async function POST(req: Request) {
         system: `
         ${DEFAULT_SYSTEM_PROMPT}
         -----------------------
-        USER ID: ${session.user.id}
+        USER ID: ${userId}
         KNOWLEDGE BASE: ${systemToUse}
         `,
         tools: {
           flightSearch: flightSearchTool,
           hotelSearchTool: hotelSearchTool,
           experienceSearch: experienceSearchTool,
-          listUserApprovalRequests: listApprovalRequestsTool,
-          getUserApprovalRequest: getApprovalRequestTool,
-          createUserApprovalRequest: createApprovalRequestTool,
+          listUserApprovalRequests: createListApprovalRequestsTool(userId),
+          getUserApprovalRequest: createGetApprovalRequestTool(userId),
+          createUserApprovalRequest: createCreateApprovalRequestTool(userId),
         },
         stopWhen: stepCountIs(5),
         onFinish: async (data) => {
@@ -271,7 +283,7 @@ export async function POST(req: Request) {
           if (!latestAIMessage.trim()) return;
 
           await db.insert(MessageTable).values({
-            userId: session.user.id,
+            userId: userId,
             chatId: chatIdToUse,
             message: latestAIMessage,
             role: "assistant",

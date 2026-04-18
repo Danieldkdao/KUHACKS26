@@ -19,7 +19,7 @@ import { KeyboardEvent, useEffect, useRef, useState } from "react";
 import { Textarea } from "./ui/textarea";
 
 type ChatWidgetProps = {
-  widgetId?: string | null;
+  userId?: string | null;
   theme?: string | null;
 };
 
@@ -285,7 +285,7 @@ const ToolInvocationCard = ({
   );
 };
 
-export const ChatWidget = ({ widgetId, theme }: ChatWidgetProps) => {
+export const ChatWidget = ({ userId, theme }: ChatWidgetProps) => {
   const [chatId, setChatId] = useState<string | null>(null);
   const [messageInput, setMessageInput] = useState("");
   const chatIdRef = useRef<string | null>(null);
@@ -300,7 +300,7 @@ export const ChatWidget = ({ widgetId, theme }: ChatWidgetProps) => {
             messages,
             ...body,
             chatId: chatIdRef.current,
-            widgetId,
+            userId,
             theme,
           },
         };
