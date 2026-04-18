@@ -8,7 +8,7 @@ import { LoadingSwap } from "@/components/ui/loading-swap";
 import { useChat } from "@ai-sdk/react";
 import { DefaultChatTransport } from "ai";
 import { SendIcon } from "lucide-react";
-import { KeyboardEvent, useEffect, useState } from "react";
+import { KeyboardEvent, useEffect, useRef, useState } from "react";
 
 const isChatIdDataPart = (part: {
   type: string;
@@ -26,11 +26,19 @@ const isChatIdDataPart = (part: {
 const Page = () => {
   const [chatId, setChatId] = useState<string | null>(null);
   const [messageInput, setMessageInput] = useState("");
+  const chatIdRef = useRef<string | null>(null);
   const { messages, sendMessage, status, error } = useChat({
     transport: new DefaultChatTransport({
       api: "/api/ai/stream-message",
-      body: {
-        chatId,
+      prepareSendMessagesRequest: ({ body, id, messages }) => {
+        return {
+          body: {
+            id,
+            messages,
+            ...body,
+            chatId: chatIdRef.current,
+          },
+        };
       },
     }),
   });
@@ -62,12 +70,16 @@ const Page = () => {
       for (const part of message.parts) {
         if (isChatIdDataPart(part)) {
           setChatId(part.data.chatId);
+          chatIdRef.current = part.data.chatId;
           return;
         }
       }
     }
   }, [chatId, messages]);
-  // todo: fix multi chat creation issue
+
+  useEffect(() => {
+    chatIdRef.current = chatId;
+  }, [chatId]);
 
   return (
     <div className="p-10">

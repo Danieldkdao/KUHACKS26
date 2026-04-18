@@ -11,8 +11,20 @@ import { google } from "@repo/ai/models";
 import { NextResponse } from "next/server";
 
 export async function POST(req: Request) {
-  const { messages, chatId }: { messages: UIMessage[]; chatId: string | null } =
-    await req.json();
+  const payload = (await req.json()) as {
+    messages?: UIMessage[];
+    chatId?: string | null;
+  };
+  const messages = payload.messages;
+  const chatId = payload.chatId ?? null;
+
+  if (!Array.isArray(messages)) {
+    return NextResponse.json(
+      { error: "Messages are required." },
+      { status: 400 },
+    );
+  }
+
   const latestUserMessage = messages
     .filter((msg) => msg.role === "user")
     .at(-1)

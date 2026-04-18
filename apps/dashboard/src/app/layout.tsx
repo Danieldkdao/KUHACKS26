@@ -3,6 +3,8 @@ import { Outfit, Geist_Mono, Inter } from "next/font/google";
 import "./globals.css";
 import { cn } from "@/lib/utils";
 import { Toaster } from "@/components/ui/sonner";
+import { DashboardSidebar } from "@/components/dashboard-sidebar";
+import { SidebarInset, SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 
 const inter = Inter({ subsets: ["latin"], variable: "--font-sans" });
 
@@ -40,7 +42,20 @@ export default function RootLayout({
     >
       <body className="min-h-full flex flex-col">
         <Toaster />
-        {children}
+        <SidebarProvider defaultOpen>
+          <DashboardSidebar />
+          <SidebarInset className="bg-muted/30">
+            <div className="sticky top-0 z-20 flex h-14 items-center gap-3 border-b border-border/70 bg-background/85 px-4 backdrop-blur md:hidden">
+              <SidebarTrigger />
+              <div>
+                <p className="text-sm font-medium text-foreground">
+                  Chat Dashboard
+                </p>
+              </div>
+            </div>
+            {children}
+          </SidebarInset>
+        </SidebarProvider>
       </body>
     </html>
   );
