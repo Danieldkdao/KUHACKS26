@@ -1,5 +1,8 @@
 import { relations } from "drizzle-orm";
 import { pgTable, text, timestamp, boolean, index } from "drizzle-orm/pg-core";
+import { ChatTable } from "./chat";
+import { MessageTable } from "./message";
+import { SystemPromptTable } from "./system-prompt";
 
 export const user = pgTable("user", {
   id: text("id").primaryKey(),
@@ -73,9 +76,12 @@ export const verification = pgTable(
   (table) => [index("verification_identifier_idx").on(table.identifier)],
 );
 
-export const userRelations = relations(user, ({ many }) => ({
+export const userRelations = relations(user, ({ one, many }) => ({
   sessions: many(session),
   accounts: many(account),
+  chats: many(ChatTable),
+  messages: many(MessageTable),
+  systemPrompt: one(SystemPromptTable),
 }));
 
 export const sessionRelations = relations(session, ({ one }) => ({

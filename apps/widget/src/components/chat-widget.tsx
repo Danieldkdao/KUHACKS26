@@ -289,6 +289,7 @@ export const ChatWidget = ({ widgetId, theme }: ChatWidgetProps) => {
   const [chatId, setChatId] = useState<string | null>(null);
   const [messageInput, setMessageInput] = useState("");
   const chatIdRef = useRef<string | null>(null);
+  const messagesEndRef = useRef<HTMLDivElement>(null);
   const { messages, sendMessage, status, error } = useChat({
     transport: new DefaultChatTransport({
       api: "/api/ai/stream-message",
@@ -344,6 +345,13 @@ export const ChatWidget = ({ widgetId, theme }: ChatWidgetProps) => {
   useEffect(() => {
     chatIdRef.current = chatId;
   }, [chatId]);
+
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({
+      behavior: "smooth",
+      block: "end",
+    });
+  }, [messages, isLoading, isStreaming, error]);
 
   return (
     <div className="rounded-xl border shadow-sm overflow-hidden h-full flex flex-col">
@@ -459,6 +467,7 @@ export const ChatWidget = ({ widgetId, theme }: ChatWidgetProps) => {
             </div>
           </div>
         ) : null}
+        <div ref={messagesEndRef} aria-hidden="true" />
       </div>
       <div className="flex items-center gap-2 w-full p-5 border-t">
         <div className="flex w-full flex-col gap-2">

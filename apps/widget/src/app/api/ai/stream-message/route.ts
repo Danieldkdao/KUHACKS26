@@ -7,7 +7,7 @@ import {
   streamText,
 } from "ai";
 import { db } from "@repo/db";
-import { ChatTable, MessageTable } from "@repo/db/schema";
+import { ChatTable, MessageTable, SystemPromptTable } from "@repo/db/schema";
 import { google } from "@repo/ai/models";
 import {
   flightSearchTool,
@@ -15,6 +15,8 @@ import {
   experienceSearchTool,
 } from "@repo/ai/tools";
 import { NextResponse } from "next/server";
+import { auth } from "@repo/auth";
+import { eq } from "drizzle-orm";
 
 const AVAILABLE_TOOLS_PROMPT = `
 - flightSearch: Search for relevant flights using filters like airline, route, flight number, airport, date, or flight status.
@@ -186,6 +188,14 @@ export async function POST(req: Request) {
   const messages = payload.messages;
   const chatId = payload.chatId ?? null;
 
+  const session = await auth.api.getSession({ headers: req.headers });
+  if (!session) {
+    return NextResponse.json(
+      { error: "You are not authenticated." },
+      { status: 400 },
+    );
+  }
+
   if (!Array.isArray(messages)) {
     return NextResponse.json(
       { error: "Messages are required." },
@@ -206,21 +216,25 @@ export async function POST(req: Request) {
 
   let chatIdToUse = chatId;
   if (!chatIdToUse) {
-    const [insertedChat] = await db.insert(ChatTable).values({}).returning();
+    const [insertedChat] = await db
+      .insert(ChatTable)
+      .values({
+        userId: session.user.id,
+      })
+      .returning();
     chatIdToUse = insertedChat.id;
   }
   await db.insert(MessageTable).values({
+    userId: session.user.id,
     chatId: chatIdToUse,
     message: latestUserMessage,
     role: "user",
   });
 
-  const systemPrompt = await db.query.SystemPromptTable.findFirst({});
-  if (!systemPrompt)
-    return NextResponse.json(
-      { error: "No system prompt defined." },
-      { status: 400 },
-    );
+  const systemPrompt = await db.query.SystemPromptTable.findFirst({
+    where: eq(SystemPromptTable.userId, session.user.id),
+  });
+  const systemToUse = systemPrompt ?? "You are a helpful assistant.";
 
   const stream = createUIMessageStream({
     execute: async ({ writer }) => {
@@ -236,7 +250,7 @@ export async function POST(req: Request) {
         ${DEFAULT_SYSTEM_PROMPT}
         -----------------------
         OTHER SPECIFICATIONS:
-        ${systemPrompt.systemPrompt}
+        ${systemToUse}
         `,
         tools: {
           flightSearch: flightSearchTool,
@@ -249,6 +263,7 @@ export async function POST(req: Request) {
           if (!latestAIMessage.trim()) return;
 
           await db.insert(MessageTable).values({
+            userId: session.user.id,
             chatId: chatIdToUse,
             message: latestAIMessage,
             role: "assistant",

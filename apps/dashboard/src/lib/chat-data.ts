@@ -1,11 +1,23 @@
+import { auth } from "@repo/auth";
 import { db } from "@repo/db";
+import { ChatTable, SystemPromptTable } from "@repo/db/schema";
+import { and, eq } from "drizzle-orm";
+import { headers } from "next/headers";
 
 export const getSystemPrompt = async () => {
-  return db.query.SystemPromptTable.findFirst({});
+  const session = await auth.api.getSession({ headers: await headers() });
+  if (!session) return;
+
+  return db.query.SystemPromptTable.findFirst({
+    where: eq(SystemPromptTable.userId, session.user.id),
+  });
 };
 
 export const getChats = async () => {
+  const session = await auth.api.getSession({ headers: await headers() });
+  if (!session) return [];
   const chats = await db.query.ChatTable.findMany({
+    where: eq(ChatTable.userId, session.user.id),
     columns: {
       id: true,
       createdAt: true,
@@ -33,13 +45,17 @@ export const getChats = async () => {
     }))
     .sort(
       (a, b) =>
-        new Date(b.lastMessageAt).getTime() - new Date(a.lastMessageAt).getTime(),
+        new Date(b.lastMessageAt).getTime() -
+        new Date(a.lastMessageAt).getTime(),
     );
 };
 
 export const getChatById = async (chatId: string) => {
+  const session = await auth.api.getSession({ headers: await headers() });
+  if (!session) return;
+
   return db.query.ChatTable.findFirst({
-    where: (chats, { eq }) => eq(chats.id, chatId),
+    where: and(eq(ChatTable.id, chatId), eq(ChatTable.userId, session.user.id)),
     columns: {
       id: true,
       createdAt: true,
