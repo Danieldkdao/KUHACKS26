@@ -1,5 +1,5 @@
 {
-  "name": "widget",
+  "name": "@repo/widget",
   "version": "0.1.0",
   "private": true,
   "scripts": {
