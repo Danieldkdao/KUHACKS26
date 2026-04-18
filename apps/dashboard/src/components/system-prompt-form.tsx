@@ -55,7 +55,7 @@ export const SystemPromptForm = ({
           <Field>
             <FieldLabel>Knowledge Base</FieldLabel>
             <Textarea
-              className="min-h-40 resize-y"
+              className="min-h-40 max-h-64"
               placeholder="Enter knowledge base instructions..."
               value={systemPrompt}
               onChange={(e) => setSystemPrompt(e.target.value)}

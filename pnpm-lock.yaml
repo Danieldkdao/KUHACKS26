@@ -14,9 +14,15 @@ importers:
 
   apps/dashboard:
     dependencies:
+      '@ai-sdk/react':
+        specifier: ^3.0.170
+        version: 3.0.170(react@19.2.4)(zod@4.3.6)
       '@hookform/resolvers':
         specifier: ^5.2.2
         version: 5.2.2(react-hook-form@7.72.1(react@19.2.4))
+      '@repo/ai':
+        specifier: workspace:*
+        version: link:../../packages/ai
       '@repo/auth':
         specifier: workspace:*
         version: link:../../packages/auth
@@ -35,6 +41,9 @@ importers:
       '@zxcvbn-ts/language-en':
         specifier: ^3.0.2
         version: 3.0.2
+      ai:
+        specifier: ^6.0.168
+        version: 6.0.168(zod@4.3.6)
       better-auth:
         specifier: ^1.6.5
         version: 1.6.5(@opentelemetry/api@1.9.0)(drizzle-kit@0.31.10)(drizzle-orm@0.45.2(@neondatabase/serverless@1.1.0)(@opentelemetry/api@1.9.0)(kysely@0.28.16))(next@16.2.4(@opentelemetry/api@1.9.0)(react-dom@19.2.4(react@19.2.4))(react@19.2.4))(react-dom@19.2.4(react@19.2.4))(react@19.2.4)
