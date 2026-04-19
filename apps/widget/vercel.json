@@ -1,8 +1,0 @@
-{
-  "rewrites": [
-    {
-      "source": "/api/auth/:path*",
-      "destination": "https://travelbot-dashboard.vercel.app/api/auth/:path*"
-    }
-  ]
-}
