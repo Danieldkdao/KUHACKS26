@@ -6,20 +6,20 @@ import {
   stepCountIs,
   streamText,
 } from "@repo/ai";
-import { db } from "@repo/db";
-import { ChatTable, MessageTable, SystemPromptTable } from "@repo/db/schema";
-import { groq } from "@repo/ai/models";
+import { mistral } from "@repo/ai/models";
 import {
+  createCreateApprovalRequestTool,
+  createGetApprovalRequestTool,
+  createListApprovalRequestsTool,
+  experienceSearchTool,
   flightSearchTool,
   hotelSearchTool,
-  experienceSearchTool,
-  createListApprovalRequestsTool,
-  createGetApprovalRequestTool,
-  createCreateApprovalRequestTool,
 } from "@repo/ai/tools";
-import { NextResponse } from "next/server";
 import { auth } from "@repo/auth";
+import { db } from "@repo/db";
+import { ChatTable, MessageTable, SystemPromptTable } from "@repo/db/schema";
 import { eq } from "drizzle-orm";
+import { NextResponse } from "next/server";
 
 const AVAILABLE_TOOLS_PROMPT = `
 - flightSearch: Search for relevant flights using filters like airline, route, flight number, airport, date, or flight status.
@@ -250,7 +250,7 @@ export async function POST(req: Request) {
       });
 
       const result = streamText({
-        model: groq("openai/gpt-oss-120b"),
+        model: mistral("mistral-large-latest"),
         messages: await convertToModelMessages(messages),
         system: `
         ${DEFAULT_SYSTEM_PROMPT}
