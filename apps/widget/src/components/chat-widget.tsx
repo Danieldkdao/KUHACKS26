@@ -16,6 +16,7 @@ import {
 } from "lucide-react";
 import { KeyboardEvent, useEffect, useRef, useState } from "react";
 import { ChatWidgetInput } from "./chat-widget-input";
+import { CopyButton } from "./copy-button";
 import { TTSButton } from "./tts-button";
 
 type ChatWidgetProps = {
@@ -428,17 +429,28 @@ export const ChatWidget = ({ userId, name, theme }: ChatWidgetProps) => {
                     })}
                   </div>
 
-                  <TTSButton
-                    variant="ghost"
-                    size="icon"
-                    additionalDisabled={isLoading || isStreaming}
-                    text={msg.parts
-                      .filter((part) => part.type === "text")
-                      .map((part) => part.text)
-                      .join("")}
-                  >
-                    <Volume2Icon />
-                  </TTSButton>
+                  <div className="flex items-center gap-1">
+                    <CopyButton
+                      variant="ghost"
+                      size="icon"
+                      additionalDisabled={isLoading || isStreaming}
+                      text={msg.parts
+                        .filter((part) => part.type === "text")
+                        .map((part) => part.text)
+                        .join("")}
+                    />
+                    <TTSButton
+                      variant="ghost"
+                      size="icon"
+                      additionalDisabled={isLoading || isStreaming}
+                      text={msg.parts
+                        .filter((part) => part.type === "text")
+                        .map((part) => part.text)
+                        .join("")}
+                    >
+                      <Volume2Icon />
+                    </TTSButton>
+                  </div>
                 </div>
               </div>
             ),

@@ -14,6 +14,7 @@ import {
   Wrench,
 } from "lucide-react";
 import { KeyboardEvent, useEffect, useRef, useState } from "react";
+import { CopyButton } from "./copy-button";
 import { ChatIdViewInput } from "./chat-id-view-input";
 import { TTSButton } from "./tts-button";
 
@@ -399,17 +400,28 @@ export const ChatIdView = ({
                         return null;
                       })}
                     </div>
-                    <TTSButton
-                      variant="ghost"
-                      size="icon"
-                      additionalDisabled={isLoading || isStreaming}
-                      text={msg.parts
-                        .filter((part) => part.type === "text")
-                        .map((part) => part.text)
-                        .join("")}
-                    >
-                      <Volume2Icon />
-                    </TTSButton>
+                    <div className="flex items-center gap-1">
+                      <CopyButton
+                        variant="ghost"
+                        size="icon"
+                        additionalDisabled={isLoading || isStreaming}
+                        text={msg.parts
+                          .filter((part) => part.type === "text")
+                          .map((part) => part.text)
+                          .join("")}
+                      />
+                      <TTSButton
+                        variant="ghost"
+                        size="icon"
+                        additionalDisabled={isLoading || isStreaming}
+                        text={msg.parts
+                          .filter((part) => part.type === "text")
+                          .map((part) => part.text)
+                          .join("")}
+                      >
+                        <Volume2Icon />
+                      </TTSButton>
+                    </div>
                   </div>
                 </div>
               ),

@@ -252,7 +252,7 @@ export async function POST(req: Request) {
   const systemPrompt = await db.query.SystemPromptTable.findFirst({
     where: eq(SystemPromptTable.userId, userId),
   });
-  const systemToUse = systemPrompt ?? "No knowledge base.";
+  const systemToUse = systemPrompt?.systemPrompt ?? "No knowledge base.";
 
   const stream = createUIMessageStream({
     execute: async ({ writer }) => {
@@ -262,7 +262,7 @@ export async function POST(req: Request) {
       });
 
       const result = streamText({
-        model: mistral("mistral-large-latest"),
+        model: mistral("mistral-medium-latest"),
         messages: await convertToModelMessages(messages),
         system: `
         ${DEFAULT_SYSTEM_PROMPT}
