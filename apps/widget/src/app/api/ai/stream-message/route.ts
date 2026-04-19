@@ -13,7 +13,7 @@ import {
   SystemPromptTable,
   user,
 } from "@repo/db/schema";
-import { google } from "@repo/ai/models";
+import { groq } from "@repo/ai/models";
 import {
   flightSearchTool,
   hotelSearchTool,
@@ -261,7 +261,7 @@ export async function POST(req: Request) {
       });
 
       const result = streamText({
-        model: google("gemini-3.1-flash-lite-preview"),
+        model: groq("openai/gpt-oss-120b"),
         messages: await convertToModelMessages(messages),
         system: `
         ${DEFAULT_SYSTEM_PROMPT}

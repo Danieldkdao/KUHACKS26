@@ -8,7 +8,7 @@ import {
 } from "@repo/ai";
 import { db } from "@repo/db";
 import { ChatTable, MessageTable, SystemPromptTable } from "@repo/db/schema";
-import { google } from "@repo/ai/models";
+import { groq } from "@repo/ai/models";
 import {
   flightSearchTool,
   hotelSearchTool,
@@ -249,7 +249,7 @@ export async function POST(req: Request) {
       });
 
       const result = streamText({
-        model: google("gemini-3.1-flash-lite-preview"),
+        model: groq("openai/gpt-oss-120b"),
         messages: await convertToModelMessages(messages),
         system: `
         ${DEFAULT_SYSTEM_PROMPT}
@@ -261,9 +261,13 @@ export async function POST(req: Request) {
           flightSearch: flightSearchTool,
           hotelSearchTool: hotelSearchTool,
           experienceSearch: experienceSearchTool,
-          listUserApprovalRequests: createListApprovalRequestsTool(session.user.id),
+          listUserApprovalRequests: createListApprovalRequestsTool(
+            session.user.id,
+          ),
           getUserApprovalRequest: createGetApprovalRequestTool(session.user.id),
-          createUserApprovalRequest: createCreateApprovalRequestTool(session.user.id),
+          createUserApprovalRequest: createCreateApprovalRequestTool(
+            session.user.id,
+          ),
         },
         stopWhen: stepCountIs(5),
         onFinish: async (data) => {

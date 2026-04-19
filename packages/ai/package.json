@@ -10,6 +10,7 @@
   },
   "dependencies": {
     "@ai-sdk/google": "^3.0.64",
+    "@ai-sdk/groq": "^3.0.35",
     "@repo/db": "workspace:*",
     "ai": "^6.0.168",
     "drizzle-orm": "^0.45.2",
