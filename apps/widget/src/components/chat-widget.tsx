@@ -1,7 +1,7 @@
 "use client";
 
 import { MarkdownRenderer } from "@/components/markdown-renderer";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { useChat } from "@ai-sdk/react";
 import { DefaultChatTransport } from "ai";
@@ -21,6 +21,8 @@ import { TTSButton } from "./tts-button";
 type ChatWidgetProps = {
   userId?: string | null;
   theme?: string | null;
+  name: string;
+  image: string | null | undefined;
 };
 
 const suggestedPrompts = [
@@ -285,7 +287,7 @@ const ToolInvocationCard = ({
   );
 };
 
-export const ChatWidget = ({ userId, theme }: ChatWidgetProps) => {
+export const ChatWidget = ({ userId, name, theme }: ChatWidgetProps) => {
   const [chatId, setChatId] = useState<string | null>(null);
   const [messageInput, setMessageInput] = useState("");
   const chatIdRef = useRef<string | null>(null);
@@ -378,7 +380,13 @@ export const ChatWidget = ({ userId, theme }: ChatWidgetProps) => {
                   </span>
                 </div>
                 <Avatar>
-                  <AvatarFallback>UU</AvatarFallback>
+                  <AvatarFallback>
+                    {name
+                      .split(" ")
+                      .slice(0, 2)
+                      .map((part) => part[0].toUpperCase())
+                      .join("")}
+                  </AvatarFallback>
                 </Avatar>
               </div>
             ) : (
@@ -387,7 +395,8 @@ export const ChatWidget = ({ userId, theme }: ChatWidgetProps) => {
                 key={index}
               >
                 <Avatar>
-                  <AvatarFallback>CT</AvatarFallback>
+                  <AvatarImage src="/bot.png" alt="TravelBot image" />
+                  <AvatarFallback>TB</AvatarFallback>
                 </Avatar>
                 <div className="space-y-1">
                   <div className="min-w-0 max-w-full rounded-md border p-2">

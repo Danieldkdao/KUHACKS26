@@ -1,7 +1,7 @@
 "use client";
 
 import { MarkdownRenderer } from "@/components/markdown-renderer";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { CardContent, CardFooter } from "@/components/ui/card";
 import { useChat } from "@ai-sdk/react";
 import { DefaultChatTransport } from "ai";
@@ -272,9 +272,11 @@ const ToolInvocationCard = ({
 
 export const ChatIdView = ({
   initialChatId,
+  name,
   messagesOg,
 }: {
   initialChatId: string;
+  name: string;
   messagesOg: ChatMessageRecord[];
 }) => {
   const [messageInput, setMessageInput] = useState("");
@@ -350,7 +352,13 @@ export const ChatIdView = ({
                   </div>
 
                   <Avatar>
-                    <AvatarFallback>UU</AvatarFallback>
+                    <AvatarFallback>
+                      {name
+                        .split(" ")
+                        .slice(0, 2)
+                        .map((part) => part[0].toUpperCase())
+                        .join("")}
+                    </AvatarFallback>
                   </Avatar>
                 </div>
               ) : (
@@ -359,7 +367,8 @@ export const ChatIdView = ({
                   key={index}
                 >
                   <Avatar>
-                    <AvatarFallback>CT</AvatarFallback>
+                    <AvatarImage src="/bot.png" alt="TravelBot image" />
+                    <AvatarFallback>TB</AvatarFallback>
                   </Avatar>
                   <div className="space-y-1">
                     <div className="min-w-0 max-w-full rounded-2xl border border-border/70 bg-card px-4 py-3 shadow-xs">

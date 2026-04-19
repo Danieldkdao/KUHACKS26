@@ -1,4 +1,5 @@
 import { ChatWidget } from "@/components/chat-widget";
+import { getUserInformation } from "@/lib/actions";
 
 type EmbedPageProps = {
   searchParams: Promise<{
@@ -9,10 +10,15 @@ type EmbedPageProps = {
 
 const EmbedPage = async ({ searchParams }: EmbedPageProps) => {
   const params = await searchParams;
+  const userInfo = await getUserInformation(params.userId);
 
   return (
     <div className="h-screen w-screen overflow-hidden bg-transparent p-0">
-      <ChatWidget userId={params.userId ?? null} theme={params.theme ?? null} />
+      <ChatWidget
+        userId={params.userId ?? null}
+        {...userInfo}
+        theme={params.theme ?? null}
+      />
     </div>
   );
 };

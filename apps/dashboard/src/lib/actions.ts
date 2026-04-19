@@ -6,6 +6,7 @@ import {
   ApprovalRequestStatus,
   ApprovalRequestTable,
   SystemPromptTable,
+  user,
 } from "@repo/db/schema";
 import { desc, eq } from "drizzle-orm";
 import { headers } from "next/headers";
@@ -106,4 +107,24 @@ export const updateApprovalRequestStatus = async (
       message: "Failed to update approval request status.",
     };
   }
+};
+
+export const getUserInformation = async () => {
+  const defaultReturnValue = { name: "Anonymous", image: null };
+  const session = await auth.api.getSession({ headers: await headers() });
+
+  if (!session) return defaultReturnValue;
+
+  const existingUser = await db.query.user.findFirst({
+    where: eq(user.id, session.user.id),
+  });
+
+  if (!existingUser) {
+    return defaultReturnValue;
+  }
+
+  return {
+    name: existingUser.name,
+    image: existingUser.image,
+  };
 };

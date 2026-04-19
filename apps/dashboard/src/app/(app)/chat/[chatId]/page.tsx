@@ -7,6 +7,7 @@ import {
 } from "@/components/ui/card";
 import { getChatById } from "@/lib/chat-data";
 import { ChatIdView } from "@/components/chat-id-view";
+import { getUserInformation } from "@/lib/actions";
 
 type ChatPageProps = {
   params: Promise<{
@@ -29,6 +30,8 @@ export default async function ChatPage({ params }: ChatPageProps) {
 
   if (!chat) notFound();
 
+  const userInfo = await getUserInformation();
+
   return (
     <div className="mx-auto flex w-full max-w-5xl flex-col px-4 py-6 sm:px-6 lg:px-8">
       <Card className="border-border/70 shadow-sm">
@@ -39,7 +42,11 @@ export default async function ChatPage({ params }: ChatPageProps) {
             message history below.
           </CardDescription>
         </CardHeader>
-        <ChatIdView initialChatId={chat.id} messagesOg={chat.messages} />
+        <ChatIdView
+          initialChatId={chat.id}
+          {...userInfo}
+          messagesOg={chat.messages}
+        />
       </Card>
     </div>
   );
