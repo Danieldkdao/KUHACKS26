@@ -3,22 +3,19 @@
 import { MarkdownRenderer } from "@/components/markdown-renderer";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
-import { LoadingSwap } from "@/components/ui/loading-swap";
 import { useChat } from "@ai-sdk/react";
 import { DefaultChatTransport } from "ai";
 import {
-  AudioLinesIcon,
   BedDouble,
   BotIcon,
   Loader2Icon,
   MapPinned,
   PlaneTakeoff,
-  SendIcon,
   Volume2Icon,
   Wrench,
 } from "lucide-react";
 import { KeyboardEvent, useEffect, useRef, useState } from "react";
-import { Textarea } from "./ui/textarea";
+import { ChatWidgetInput } from "./chat-widget-input";
 import { TTSButton } from "./tts-button";
 
 type ChatWidgetProps = {
@@ -486,35 +483,15 @@ export const ChatWidget = ({ userId, theme }: ChatWidgetProps) => {
         ) : null}
         <div ref={messagesEndRef} aria-hidden="true" />
       </div>
-      <div className="flex items-center gap-2 w-full p-5 border-t">
-        <div className="flex w-full flex-col gap-2">
-          {error ? (
-            <div className="rounded-md border border-destructive/30 bg-destructive/10 px-3 py-2">
-              <p className="text-sm text-destructive">
-                The model could not answer right now. Please try again.
-              </p>
-            </div>
-          ) : null}
-          <div className="flex flex-col gap-2">
-            <Textarea
-              value={messageInput}
-              onChange={(e) => setMessageInput(e.target.value)}
-              onKeyDown={handleInputKeyDown}
-              disabled={isLoading || isStreaming}
-              className="border-none max-h-32 focus-visible:ring-0 focus-visible:border-none focus-visible:outline-0 ring-0 outline-0 shadow-none resize-none"
-            />
-            <Button
-              onClick={handleSendMessage}
-              disabled={isLoading || isStreaming || !messageInput.trim()}
-              className="self-end"
-            >
-              <LoadingSwap isLoading={isLoading || isStreaming}>
-                <SendIcon />
-              </LoadingSwap>
-            </Button>
-          </div>
-        </div>
-      </div>
+      <ChatWidgetInput
+        error={error}
+        handleInputKeyDown={handleInputKeyDown}
+        handleSendMessage={handleSendMessage}
+        isLoading={isLoading}
+        isStreaming={isStreaming}
+        messageInput={messageInput}
+        setMessageInput={setMessageInput}
+      />
     </div>
   );
 };

@@ -63,7 +63,7 @@ export async function GET() {
   iframe.style.height = "100%";
   iframe.style.border = "0";
   iframe.style.background = "transparent";
-  iframe.allow = "clipboard-write";
+  iframe.allow = "clipboard-write *; microphone *";
   panel.appendChild(iframe);
 
   if (position === "bottom-left") {

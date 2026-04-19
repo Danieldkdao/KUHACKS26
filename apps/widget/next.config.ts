@@ -13,6 +13,15 @@ const nextConfig: NextConfig = {
           },
         ],
       },
+      {
+        source: "/(.*)",
+        headers: [
+          {
+            key: "Permissions-Policy",
+            value: "microphone=*",
+          },
+        ],
+      },
     ];
   },
 };

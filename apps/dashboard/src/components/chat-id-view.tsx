@@ -2,10 +2,7 @@
 
 import { MarkdownRenderer } from "@/components/markdown-renderer";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { Button } from "@/components/ui/button";
 import { CardContent, CardFooter } from "@/components/ui/card";
-import { LoadingSwap } from "@/components/ui/loading-swap";
-import { Textarea } from "@/components/ui/textarea";
 import { useChat } from "@ai-sdk/react";
 import { DefaultChatTransport } from "ai";
 import {
@@ -13,11 +10,11 @@ import {
   Loader2Icon,
   MapPinned,
   PlaneTakeoff,
-  SendIcon,
   Volume2Icon,
   Wrench,
 } from "lucide-react";
 import { KeyboardEvent, useEffect, useRef, useState } from "react";
+import { ChatIdViewInput } from "./chat-id-view-input";
 import { TTSButton } from "./tts-button";
 
 type ChatMessageRecord = {
@@ -446,37 +443,15 @@ export const ChatIdView = ({
       </CardContent>
 
       <CardFooter className="border-t px-6 py-5">
-        <div className="flex w-full items-center gap-2">
-          <div className="flex w-full flex-col gap-2">
-            {error ? (
-              <div className="rounded-md border border-destructive/30 bg-destructive/10 px-3 py-2">
-                <p className="text-sm text-destructive">
-                  The model could not answer right now. Please try again.
-                </p>
-              </div>
-            ) : null}
-
-            <div className="flex flex-col gap-2">
-              <Textarea
-                value={messageInput}
-                onChange={(e) => setMessageInput(e.target.value)}
-                onKeyDown={handleInputKeyDown}
-                disabled={isLoading || isStreaming}
-                placeholder="Continue the conversation..."
-                className="max-h-32 resize-none border-none shadow-none ring-0 outline-0 focus-visible:border-none focus-visible:ring-0"
-              />
-              <Button
-                onClick={handleSendMessage}
-                disabled={isLoading || isStreaming || !messageInput.trim()}
-                className="self-end"
-              >
-                <LoadingSwap isLoading={isLoading || isStreaming}>
-                  <SendIcon />
-                </LoadingSwap>
-              </Button>
-            </div>
-          </div>
-        </div>
+        <ChatIdViewInput
+          error={error}
+          messageInput={messageInput}
+          setMessageInput={setMessageInput}
+          handleInputKeyDown={handleInputKeyDown}
+          isLoading={isLoading}
+          isStreaming={isStreaming}
+          handleSendMessage={handleSendMessage}
+        />
       </CardFooter>
     </>
   );
