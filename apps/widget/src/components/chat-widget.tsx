@@ -7,16 +7,19 @@ import { LoadingSwap } from "@/components/ui/loading-swap";
 import { useChat } from "@ai-sdk/react";
 import { DefaultChatTransport } from "ai";
 import {
+  AudioLinesIcon,
   BedDouble,
   BotIcon,
   Loader2Icon,
   MapPinned,
   PlaneTakeoff,
   SendIcon,
+  Volume2Icon,
   Wrench,
 } from "lucide-react";
 import { KeyboardEvent, useEffect, useRef, useState } from "react";
 import { Textarea } from "./ui/textarea";
+import { TTSButton } from "./tts-button";
 
 type ChatWidgetProps = {
   userId?: string | null;
@@ -389,33 +392,47 @@ export const ChatWidget = ({ userId, theme }: ChatWidgetProps) => {
                 <Avatar>
                   <AvatarFallback>CT</AvatarFallback>
                 </Avatar>
-                <div className="min-w-0 max-w-full rounded-md border p-2">
-                  {msg.parts.map((part, partIndex) => {
-                    if (part.type === "text") {
-                      return (
-                        <MarkdownRenderer
-                          className="min-w-0 max-w-full text-base text-muted-foreground"
-                          key={partIndex}
-                        >
-                          {part.text}
-                        </MarkdownRenderer>
-                      );
-                    }
+                <div className="space-y-1">
+                  <div className="min-w-0 max-w-full rounded-md border p-2">
+                    {msg.parts.map((part, partIndex) => {
+                      if (part.type === "text") {
+                        return (
+                          <MarkdownRenderer
+                            className="min-w-0 max-w-full text-base text-muted-foreground"
+                            key={partIndex}
+                          >
+                            {part.text}
+                          </MarkdownRenderer>
+                        );
+                      }
 
-                    if (isToolInvocationPart(part)) {
-                      return (
-                        <ToolInvocationCard
-                          key={partIndex}
-                          toolName={part.toolInvocation.toolName}
-                          state={part.toolInvocation.state}
-                          args={part.toolInvocation.args}
-                          result={part.toolInvocation.result}
-                        />
-                      );
-                    }
+                      if (isToolInvocationPart(part)) {
+                        return (
+                          <ToolInvocationCard
+                            key={partIndex}
+                            toolName={part.toolInvocation.toolName}
+                            state={part.toolInvocation.state}
+                            args={part.toolInvocation.args}
+                            result={part.toolInvocation.result}
+                          />
+                        );
+                      }
 
-                    return null;
-                  })}
+                      return null;
+                    })}
+                  </div>
+
+                  <TTSButton
+                    variant="ghost"
+                    size="icon"
+                    additionalDisabled={isLoading || isStreaming}
+                    text={msg.parts
+                      .filter((part) => part.type === "text")
+                      .map((part) => part.text)
+                      .join("")}
+                  >
+                    <Volume2Icon />
+                  </TTSButton>
                 </div>
               </div>
             ),

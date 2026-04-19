@@ -4,10 +4,6 @@
       "source": "/(.*)",
       "headers": [
         {
-          "key": "X-Frame-Options",
-          "value": "ALLOW-FROM https://travelbot-widget.vercel.app"
-        },
-        {
           "key": "Content-Security-Policy",
           "value": "frame-ancestors 'self' https://travelbot-widget.vercel.app"
         }
