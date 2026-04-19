@@ -1,4 +1,5 @@
 import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
 import { cn } from "@/lib/utils";
 
 type MarkdownRendererProps = {
@@ -20,11 +21,13 @@ export const MarkdownRenderer = ({
         "[&_li]:my-1 [&_li]:pl-1",
         "[&_strong]:font-semibold [&_strong]:text-foreground",
         "[&_em]:italic",
+        "[&_del]:text-muted-foreground/80 [&_del]:line-through",
         "[&_pre]:max-w-full",
         className,
       )}
     >
       <ReactMarkdown
+        remarkPlugins={[remarkGfm]}
         components={{
           h1: ({ children }) => (
             <h1 className="mt-6 mb-3 text-2xl font-semibold tracking-tight text-foreground first:mt-0">
@@ -102,12 +105,36 @@ export const MarkdownRenderer = ({
               {children}
             </ol>
           ),
-          li: ({ children }) => (
-            <li className="marker:text-primary">{children}</li>
+          li: ({ children, className }) => (
+            <li
+              className={cn(
+                "marker:text-primary",
+                className?.includes("task-list-item") && "list-none pl-0",
+                className,
+              )}
+            >
+              {children}
+            </li>
           ),
+          input: ({ className, ...props }) => {
+            if (props.type === "checkbox") {
+              return (
+                <input
+                  {...props}
+                  disabled
+                  className={cn(
+                    "mr-2 size-4 rounded border-border align-middle accent-primary",
+                    className,
+                  )}
+                />
+              );
+            }
+
+            return <input {...props} className={className} />;
+          },
           table: ({ children }) => (
-            <div className="my-4 overflow-x-auto rounded-xl border border-border">
-              <table className="w-full border-collapse text-left text-base">
+            <div className="my-4 max-w-full overflow-x-auto rounded-xl border border-border bg-background shadow-sm">
+              <table className="min-w-full border-collapse text-left text-sm sm:text-base">
                 {children}
               </table>
             </div>
@@ -115,13 +142,17 @@ export const MarkdownRenderer = ({
           thead: ({ children }) => (
             <thead className="bg-muted/70">{children}</thead>
           ),
+          tbody: ({ children }) => <tbody className="divide-y divide-border">{children}</tbody>,
+          tr: ({ children }) => (
+            <tr className="align-top even:bg-muted/20">{children}</tr>
+          ),
           th: ({ children }) => (
-            <th className="border-b border-border px-3 py-2 font-semibold text-foreground">
+            <th className="whitespace-nowrap border-b border-border px-3 py-2 font-semibold text-foreground sm:px-4 sm:py-3">
               {children}
             </th>
           ),
           td: ({ children }) => (
-            <td className="border-t border-border px-3 py-2 align-top text-foreground/90">
+            <td className="px-3 py-2 align-top text-foreground/90 sm:px-4 sm:py-3">
               {children}
             </td>
           ),
