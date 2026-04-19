@@ -468,7 +468,8 @@ export const ChatWidget = ({ userId, name, theme }: ChatWidgetProps) => {
         {isLoading ? (
           <div className="flex items-start gap-2 max-w-[80%] self-start">
             <Avatar>
-              <AvatarFallback>CT</AvatarFallback>
+              <AvatarImage src="/bot.png" alt="TravelBot image" />
+              <AvatarFallback>TB</AvatarFallback>
             </Avatar>
             <div className="rounded-md border bg-muted/40 px-3 py-2">
               <span className="text-base font-medium text-muted-foreground animate-pulse">
@@ -480,7 +481,8 @@ export const ChatWidget = ({ userId, name, theme }: ChatWidgetProps) => {
         {error ? (
           <div className="flex items-start gap-2 max-w-[80%] w-fit self-start">
             <Avatar>
-              <AvatarFallback>CT</AvatarFallback>
+              <AvatarImage src="/bot.png" alt="TravelBot image" />
+              <AvatarFallback>TB</AvatarFallback>
             </Avatar>
             <div className="rounded-md border border-destructive/30 bg-destructive/10 px-3 py-2">
               <p className="text-sm font-semibold text-destructive">

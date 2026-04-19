@@ -423,7 +423,8 @@ export const ChatIdView = ({
           {isLoading ? (
             <div className="flex max-w-[80%] items-start gap-2 self-start">
               <Avatar>
-                <AvatarFallback>CT</AvatarFallback>
+                <AvatarImage src="/bot.png" alt="TravelBot image" />
+                <AvatarFallback>TB</AvatarFallback>
               </Avatar>
               <div className="rounded-2xl border bg-muted/40 px-4 py-3">
                 <span className="animate-pulse text-base font-medium text-muted-foreground">
@@ -436,7 +437,8 @@ export const ChatIdView = ({
           {error ? (
             <div className="flex w-fit max-w-[80%] items-start gap-2 self-start">
               <Avatar>
-                <AvatarFallback>CT</AvatarFallback>
+                <AvatarImage src="/bot.png" alt="TravelBot image" />
+                <AvatarFallback>TB</AvatarFallback>
               </Avatar>
               <div className="rounded-2xl border border-destructive/30 bg-destructive/10 px-4 py-3">
                 <p className="text-sm font-semibold text-destructive">
